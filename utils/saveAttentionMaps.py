@@ -9,14 +9,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import label, center_of_mass
 # /cluster/datastore/aniketag/WordStylist
+import os
 import logging
+os.makedirs('./logs', exist_ok=True)
 logging.basicConfig(
-    #format='[%(asctime)s, %(levelname)s, %(name)s] %(message)s',
-    #datefmt='%Y-%m-%d %H:%M:%S',
     level=logging.INFO,
     handlers=[
-        logging.FileHandler('./logs/train.log'),  # Add a FileHandler
-        logging.StreamHandler()  # Add a StreamHandler for console output
+        logging.FileHandler('./logs/train.log'),
+        logging.StreamHandler()
     ]
 )
 logger = logging.getLogger('')

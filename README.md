@@ -13,6 +13,16 @@
 
 ---
 
+## Attention Map Visualization
+
+Per-character attention maps showing how the model localizes each character in the generated word:
+
+![Attention Maps Preview](attentionMaps_preview.gif)
+
+Each frame shows the attention map for one character of a generated word, overlaid on the word image. The model uses these maps to spatially inject a different writer's style at the character level.
+
+---
+
 ## Method Overview
 
 - **Base model:** [WordStylist](https://github.com/koninik/WordStylist) — a pretrained latent diffusion model for styled handwritten word generation (ICDAR 2023)
@@ -24,8 +34,10 @@
 ## Requirements
 
 ```bash
-pip install torch torchvision diffusers transformers einops wandb timm scikit-image pandas
+pip install -r requirements.txt
 ```
+
+Key packages: `torch>=2.4.1`, `diffusers>=0.35.1`, `transformers>=4.46.3`, `einops`, `timm`, `wandb`, `scikit-image`
 
 ---
 
@@ -103,8 +115,6 @@ If you use this code, please cite our ICDAR 2025 paper:
 ## Code Credits
 
 This work builds directly on top of **WordStylist** ([koninik/WordStylist](https://github.com/koninik/WordStylist)). The base diffusion model, U-Net architecture, training pipeline, and dataset preprocessing are from WordStylist. We extend it with training-free style mixing at inference time.
-
-> Nikolaidou, K., Retsinas, G., Christlein, V., Seuret, M., Sfikas, G., Smith, E. B., Mokayed, H., & Liwicki, M. (2023). *WordStylist: Styled Verbatim Handwritten Text Generation with Latent Diffusion Models*. ICDAR 2023.
 
 ```bibtex
 @article{nikolaidou2023wordstylist,
