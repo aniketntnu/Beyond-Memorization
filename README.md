@@ -1,13 +1,15 @@
 # Beyond Memorization: Training-Free Style Mixing for Variability in Handwritten Text Generation Using Writer Embedding Injection in Pretrained Diffusion Models
 
+**ICDAR 2025** — Published in *Document Analysis and Recognition – ICDAR 2025*, Springer Nature Switzerland, pp. 465–484.
+
 <p align='center'>
   <b>
-    <a href="#">Paper (coming soon)</a>
+    <a href="https://doi.org/10.1007/978-3-032-04627-7_27">Paper (Springer)</a>
   </b>
 </p>
 
 > **Abstract:**
-> We propose a training-free style mixing approach for handwritten text generation that injects multiple writer embeddings at the character level into a pretrained diffusion model (WordStylist). At inference time, attention maps from the U-Net middle block spatially localize individual characters, and a randomly selected writer's embedding is blended into the corresponding region — producing variability in generated handwriting styles without any additional training.
+> Recent advancements in handwritten text generation using diffusion models have achieved high-quality and realistic handwriting synthesis. However, existing models often suffer from limited style variability, which reduces their effectiveness for downstream tasks like handwriting recognition and writer identification, which rely on diverse handwriting samples to ensure model generalization and robustness. Without sufficient variability, models trained on synthetic data risk overfitting to a narrow set of styles, limiting their applicability in real-world scenarios. Diffusion models typically require large-scale datasets to generalize effectively, but in the domain of handwriting generation, comparatively limited training data is available, leading to strong memorization tendencies. As a result, generated handwriting samples often replicate training data instead of introducing novel variations, further restricting their usefulness for downstream applications.
 
 ---
 
@@ -15,7 +17,7 @@
 
 - **Base model:** [WordStylist](https://github.com/koninik/WordStylist) — a pretrained latent diffusion model for styled handwritten word generation (ICDAR 2023)
 - **Our contribution:** Training-free style mixing at inference time using character-level attention map localization and writer embedding injection
-- **Key idea:** For a word with *N* characters, the U-Net attention maps identify each character's spatial region. A different writer's style embedding is injected into selected character regions, producing stylistically varied outputs.
+- **Key idea:** For a word with *N* characters, the U-Net attention maps identify each character's spatial region. A different writer's style embedding is injected into selected character regions, producing stylistically varied outputs without any additional training.
 
 ---
 
@@ -78,6 +80,26 @@ Each attention map filename encodes: `imagename_charIndex_charLetter_....png`
 
 ---
 
+## Citation
+
+If you use this code, please cite our ICDAR 2025 paper:
+
+```bibtex
+@InProceedings{10.1007/978-3-032-04627-7_27,
+  author="Gurav, Aniket and Chanda, Sukalpa and Krishnan, Narayanan C.",
+  editor="Yin, Xu-Cheng and Karatzas, Dimosthenis and Lopresti, Daniel",
+  title="Beyond Memorization: Training-Free Style Mixing for Variability in Handwritten Text Generation Using Writer Embedding Injection in Pretrained Diffusion Models",
+  booktitle="Document Analysis and Recognition -- ICDAR 2025",
+  year="2026",
+  publisher="Springer Nature Switzerland",
+  address="Cham",
+  pages="465--484",
+  isbn="978-3-032-04627-7"
+}
+```
+
+---
+
 ## Code Credits
 
 This work builds directly on top of **WordStylist** ([koninik/WordStylist](https://github.com/koninik/WordStylist)). The base diffusion model, U-Net architecture, training pipeline, and dataset preprocessing are from WordStylist. We extend it with training-free style mixing at inference time.
@@ -94,16 +116,3 @@ This work builds directly on top of **WordStylist** ([koninik/WordStylist](https
 ```
 
 We also thank the authors of [Stable Diffusion](https://github.com/CompVis/stable-diffusion), [HTR best practices](https://github.com/georgeretsi/HTR-best-practices), and [GANwriting](https://github.com/omni-us/research-GANwriting) for their open-source contributions.
-
----
-
-## Citation
-
-If you use this code, please cite:
-```bibtex
-@article{gurav2025beyondmemorization,
-  title={{Beyond Memorization: Training-Free Style Mixing for Variability in Handwritten Text Generation Using Writer Embedding Injection in Pretrained Diffusion Models}},
-  author={Gurav, Aniket and others},
-  year={2025}
-}
-```
