@@ -1,62 +1,90 @@
-# Official PyTorch Implementation of "WordStylist: Styled Verbatim Handwritten Text Generation with Latent Diffusion Models" - ICDAR 2023
+# Beyond Memorization: Training-Free Style Mixing for Variability in Handwritten Text Generation Using Writer Embedding Injection in Pretrained Diffusion Models
 
-<!-- 
-[arXiv](https://arxiv.org/pdf/2303.16576.pdf) 
-  -->
- <p align='center'>
+<p align='center'>
   <b>
-    <a href="https://arxiv.org/pdf/2303.16576.pdf">ArXiv Paper</a>
+    <a href="#">Paper (coming soon)</a>
   </b>
-</p> 
-
- 
- <p align="center">
-<img src=figs/wordstylist.png width="600"/>
 </p>
 
-> **Abstract:** 
->*Text-to-Image synthesis is the task of generating an image according to a specific text description. Generative Adversarial Networks have been considered the standard method for image synthesis virtually since their introduction. Denoising Diffusion Probabilistic Models are recently setting a new baseline, with remarkable results in Text-to-Image synthesis, among other fields. Aside its usefulness per se, it can also be particularly relevant as a tool for data augmentation to aid training models for other document image processing tasks. In this work, we present a latent diffusion-based method for styled text-to-text-content-image generation on word-level. Our proposed method is able to generate realistic word image samples from different writer styles, by using class index styles and text content prompts without the need of adversarial training, writer recognition, or text recognition. We gauge system performance with the Fréchet Inception Distance, writer recognition accuracy, and writer retrieval. We show that the proposed model produces samples that are aesthetically pleasing, help boosting text recognition performance, and get similar writer retrieval score as real data.*
+> **Abstract:**
+> We propose a training-free style mixing approach for handwritten text generation that injects multiple writer embeddings at the character level into a pretrained diffusion model (WordStylist). At inference time, attention maps from the U-Net middle block spatially localize individual characters, and a randomly selected writer's embedding is blended into the corresponding region — producing variability in generated handwriting styles without any additional training.
 
+---
 
-## Dataset & Pre-processing
+## Method Overview
 
-Download the ```data/words.tgz``` of IAM Handwriting Database: https://fki.tic.heia-fr.ch/databases/iam-handwriting-database.
+- **Base model:** [WordStylist](https://github.com/koninik/WordStylist) — a pretrained latent diffusion model for styled handwritten word generation (ICDAR 2023)
+- **Our contribution:** Training-free style mixing at inference time using character-level attention map localization and writer embedding injection
+- **Key idea:** For a word with *N* characters, the U-Net attention maps identify each character's spatial region. A different writer's style embedding is injected into selected character regions, producing stylistically varied outputs.
 
-Then, pre-process the word images by running:
-```
-python prepare_images.py
-```
-Before running the ```prepare_images.py``` code make sure you have changed the ```iam_path``` and ```save_dir``` to the corresponding ```data/words.tgz``` and the path to save the processed images.
+---
 
-## Training from scratch
+## Requirements
 
-To train the diffusion model run:
-```
-python train.py --iam_path path/to/processed/images --save_path path/to/save/models/and/results
+```bash
+pip install torch torchvision diffusers transformers einops wandb timm scikit-image pandas
 ```
 
-## Trained Model
+---
 
-We provide the weights of a trained model, which you can download from: [trained_model](https://drive.google.com/file/d/1XVRUXSJw0PaNgrtFH_mNHceFO-Ouf_xz/view?usp=share_link).
+## Pre-trained Model
 
-## Sampling - Regenerating IAM
+Download the WordStylist trained model weights:
+[trained_model](https://drive.google.com/file/d/1XVRUXSJw0PaNgrtFH_mNHceFO-Ouf_xz/view?usp=share_link)
 
-If you want to regenerate the full IAM training set you can run:
+Place the model under the path specified in `config.py` (`authorBasePath`).
+
+---
+
+## Configuration
+
+Edit `config.py` to set:
+- `iam_path` — path to preprocessed IAM word images
+- `authorBasePath` — path to the pretrained WordStylist model
+- `save_path` — where to save generated images and attention maps
+- `MAX_CHARS` — maximum word length (default: 25)
+
+---
+
+## Running Inference
+
+```bash
+python regFrmTrnVariStyleMixOcr.py --batch_size 4 --epochs 1
 ```
-python full_sampling.py --save_path path/to/save/generated/images --models_path /path/to/trained/models
+
+**Output structure:**
+```
+save_path/
+  noChange/                  ← generated word images (original writer style)
+    attentionMaps/           ← per-character attention map PNGs
 ```
 
-## Sampling - Single image
+Each attention map filename encodes: `imagename_charIndex_charLetter_....png`
 
-If you want to generate a single word with a random style you can run:
-```
-python sampling.py --save_path path/to/save/generated/images --models_path /path/to/trained/models --words ['hello']
-```
+---
 
-## Citation
+## Key Files
 
-If you find the code useful for your research, please cite our paper:
-```
+| File | Description |
+|------|-------------|
+| `regFrmTrnVariStyleMixOcr.py` | Main inference script |
+| `unetVarStleMixExp4.py` | Modified U-Net with attention visualization and style injection |
+| `config.py` | All configuration (paths, MAX_CHARS, model names) |
+| `utils/saveAttentionMaps.py` | Attention map visualization and saving utilities |
+| `utils/dataset.py` | IAM dataset loader |
+| `htr/` | HTR OCR model for word-level filtering |
+| `ResPhoSCNetZSL/` | PHOSC character embedding module |
+| `gt/gany.filter27` | IAM training word list |
+
+---
+
+## Code Credits
+
+This work builds directly on top of **WordStylist** ([koninik/WordStylist](https://github.com/koninik/WordStylist)). The base diffusion model, U-Net architecture, training pipeline, and dataset preprocessing are from WordStylist. We extend it with training-free style mixing at inference time.
+
+> Nikolaidou, K., Retsinas, G., Christlein, V., Seuret, M., Sfikas, G., Smith, E. B., Mokayed, H., & Liwicki, M. (2023). *WordStylist: Styled Verbatim Handwritten Text Generation with Latent Diffusion Models*. ICDAR 2023.
+
+```bibtex
 @article{nikolaidou2023wordstylist,
   title={{WordStylist: Styled Verbatim Handwritten Text Generation with Latent Diffusion Models}},
   author={Nikolaidou, Konstantina and Retsinas, George and Christlein, Vincent and Seuret, Mathias and Sfikas, Giorgos and Smith, Elisa Barney and Mokayed, Hamam and Liwicki, Marcus},
@@ -65,6 +93,17 @@ If you find the code useful for your research, please cite our paper:
 }
 ```
 
-## Acknowledgements
+We also thank the authors of [Stable Diffusion](https://github.com/CompVis/stable-diffusion), [HTR best practices](https://github.com/georgeretsi/HTR-best-practices), and [GANwriting](https://github.com/omni-us/research-GANwriting) for their open-source contributions.
 
-We would like to thank the researchers of [Stable Diffusion](https://github.com/CompVis/stable-diffusion), [GANwriting](https://github.com/omni-us/research-GANwriting/tree/9e0d8a3a8327f00c67029dbf4a2fc1b0a88f730d), [SmartPatch](https://github.com/MattAlexMiracle/SmartPatch), and [HTR best practices](https://github.com/georgeretsi/HTR-best-practices/tree/main) for releasing their code.
+---
+
+## Citation
+
+If you use this code, please cite:
+```bibtex
+@article{gurav2025beyondmemorization,
+  title={{Beyond Memorization: Training-Free Style Mixing for Variability in Handwritten Text Generation Using Writer Embedding Injection in Pretrained Diffusion Models}},
+  author={Gurav, Aniket and others},
+  year={2025}
+}
+```
