@@ -981,14 +981,13 @@ def train(epoch,diffusion,net, model, ema, ema_model, vae, optimizer, mse_loss, 
                         break
                     #print("\n\t i:",i)
                     
+                    stopValue = 1  # default: keep running
                     try:
                         with open(args.stopFlag,"r") as f:
                             stopValue = int(f.readline())
-                        
                     except Exception as e:
-                        print("\n\t stop flag issue:",e)
-        
-        
+                        pass  # flag file missing — keep running
+
                     if stopValue == 0:
                         exit()
         
