@@ -15,50 +15,24 @@ if lang == "NOR":
 print("\n\t 0.MAX_CHARS=",MAX_CHARS)
 
 if lang == "ENG":
-    gt_train = ["./gt/charWordTrainIamAnnotation.txt",
-                "./gt/characterWordLevelAnnotation.txt",
-                "./gt/gan.iam.tr_va.gt.filter27",
-                "/cluster/datastore/aniketag/newWordStylist/WordStylist/gt/delMe_1.txt",
-                "/cluster/datastore/aniketag/newWordStylist/wordStylist2/WordStylist/gt/gan.iam.tr_va.gt.filter27",
-                "/cluster/datastore/aniketag/newWordStylist/WordStylist/gt/gany.filter27",
-                "/cluster/datastore/aniketag/newWordStylist/WordStylist/gt/outOfVocIAM.txt",
-                './gt/results_IAM_train.filter27'][-4]#[-2]
+    gt_train = "./gt/gany.filter27"
 elif lang == "NOR":
-    gt_train = "/cluster/datastore/aniketag/allData/wordStylist/allCrops_preprocess_norwegian_gt/norwegian9000_train_0_All.filter27"
+    gt_train = "./gt/norwegian9000_train_0_All.filter27"
 
 if lang == "ENG":
     dataIndx = 1
 elif lang == "NOR":
     dataIndx = 0
 
-iam_path = [
-            "/cluster/datastore/aniketag/allData/wordStylist/allCrops_preprocess_norwegian/",
-            '/cluster/datastore/aniketag/allData/wordStylist/allCrops_preprocess/'
-            ][dataIndx]
+# Set via --iam_path CLI argument at runtime
+iam_path = os.environ.get("IAM_PATH", "./data/iam_crops/")
 
 print("\n\t 1.iam_path=",iam_path)
 
 csvRead = [None,"/cluster/datastore/aniketag/newHTR/HTR-best-practices/allResults/IAM/resultsTrainForDiffusion.csv",None][allInOneIndx]
 
-authorBasePath = [
-                 "/cluster/datastore/aniketag/allData/wordStylist/models/iit/",
-                 "/cluster/datastore/aniketag/allData/wordStylist/models/IAM/authorsModel/models/models/",
-                 "/cluster/datastore/aniketag/allData/wordStylist/models/IAM/charImage/models/models/",   
-                 "/cluster/datastore/aniketag/allData/wordStylist/models/IAM/Mse_Style_only_text_condi_FromScratch/models/",
-                 "/cluster/datastore/aniketag/allData/wordStylist/models/IAM/Mse_Style_text_condi_FromScratch/models/",
-                 "/cluster/datastore/aniketag/allData/wordStylist/models/Norwegian/Mse_Nor_text_condi_FromScratch/models/",
-                  "/cluster/datastore/aniketag/allData/wordStylist/models/Norwegian/Mse_Nor_text_Phos_condi_FromScratch/models/",
-                  "/cluster/datastore/aniketag/newWordStylist/WordStylist/models/Mse_text_Phos_condi_FromScratch/models/",
-                  "/cluster/datastore/aniketag/newWordStylist/WordStylist/models/Mse_Transcription_OcrPred_FromScratch/models/",  
-                  "/cluster/datastore/aniketag/WordStylist/authorsModel/models/" +"/models/",
-                  "/cluster/datastore/aniketag/WordStylist/regeneratedImages/models/",
-                  "/cluster/datastore/aniketag/WordStylist/authorPlusHtrBestFineTuneOnlyCTCnoMSE/models/",
-                  "/cluster/datastore/aniketag/WordStylist/CTCMfromScratch/models/",
-                  "/cluster/datastore/aniketag/WordStylist/CtcMSEimageMSEfromScratch/models/",
-                  "/cluster/datastore/aniketag/WordStylist/models/MseOnlyPhoscfromScratch/",
-                  "/cluster/datastore/aniketag/WordStylist/models/Mse_OnlyPhocfromScratch/",
-                  "/cluster/datastore/aniketag/WordStylist/models/Mse_OcrPredFromScratch/",
-                  ][allInOneIndx]
+# Set via --model_path CLI argument at runtime
+authorBasePath = os.environ.get("MODEL_PATH", "./models/")
 # charWord
 ckptModelName =[
                 "ema_GW_Mse_text_condi_FromScratch.pt",
@@ -101,18 +75,12 @@ emaModelName  = [
                 "ema_ckptHtrBestOnlyImageMSECTCMfromScratch.pt",
                 "ema_ckptauthorPlusHtrBestFineTuneOnlyCTCnoMSE.pt"][allInOneIndx]
 
+# Set via --save_path CLI argument at runtime
 if lang == "ENG":
-    save_path = ["/cluster/datastore/aniketag/allData/syntheticData/train/icdar2025/IAM/variableDataGeneration/attentionExp9/",
-                 "/cluster/datastore/aniketag/allData/wordStylist/models/IAM/charImage/models/models/models/models/", 
-                 "/cluster/datastore/aniketag/allData/wordStylist/models/IAM/charImage/models/models/models/",                 
-                 "/cluster/datastore/aniketag/allData/wordStylist/models/IAM/Mse_only_text_condi_HiGanArchitect/models/",                 
-                 "/cluster/datastore/aniketag/allData/wordStylist/models/IAM/Mse_only_textAndImage_condi_FromScratch/models/",
-                 "/cluster/datastore/aniketag/allData/wordStylist/models/IAM/Mse_Style_only_text_condi_FromScratch/models/",
-                "/cluster/datastore/aniketag/allData/wordStylist/models/IAM/Mse_Style_text_condi_FromScratch/models/",
-                 "./models/Mse_text_Phos_condi_FromScratch/","./models/Mse_Transcription_OcrPred_FromScratch/"][allInOneIndx]
+    save_path = os.environ.get("SAVE_PATH", "./output/")
     os.makedirs(save_path, exist_ok=True)
 elif lang == "NOR":
-    save_path = "/cluster/datastore/aniketag/allData/wordStylist/models/Norwegian/Mse_Nor_text_condi_FromScratch_ICDAR/models/generatedData/"
+    save_path = os.environ.get("SAVE_PATH", "./output/")
     
     """
     ["/cluster/datastore/aniketag/allData/wordStylist/models/Norwegian/Mse_Nor_text_condi_FromScratch/models/",

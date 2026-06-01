@@ -31,6 +31,22 @@ Each frame shows the attention map for one character overlaid on the generated w
 
 ---
 
+## Assumptions
+
+> These are the assumptions made by this implementation. Make sure they are satisfied before running.
+
+| # | Assumption | Detail |
+|---|-----------|--------|
+| 1 | **CUDA GPU available** | Requires a CUDA-capable GPU. CPU inference is not supported. Set `device = "cuda:0"` in `config.py` (change to `"cuda:1"` etc. if needed) |
+| 2 | **IAM dataset preprocessed** | Word images must be cropped and resized to **64×256 px** grayscale PNG. See preprocessing step below |
+| 3 | **WordStylist pretrained model** | The EMA model `ema_ckpt.pt` must be downloaded from WordStylist and passed via `--model_path` |
+| 4 | **HTR/OCR model** | A pretrained HTR model `.pt` file is needed for word-level OCR filtering, passed via `--loadPrevPath` |
+| 5 | **Python 3.8** | Tested on Python 3.8 with PyTorch 2.4.1+CUDA 12.1 |
+| 6 | **MAX_CHARS = 25** | Maximum word length is 25 characters. Words longer than 25 chars are skipped |
+| 7 | **GT file included** | `gt/gany.filter27` (IAM training word list) is included in this repo — no need to download separately |
+
+---
+
 ## Requirements
 
 ```bash
@@ -41,114 +57,67 @@ Key packages: `torch>=2.4.1`, `diffusers>=0.35.1`, `transformers>=4.46.3`, `eino
 
 ---
 
-## Setup: Paths to Change Before Running
+## Setup
 
-> ⚠️ **This is the most important step.** The code has several paths you must update for your system.
+### Step 1 — Download pretrained models
 
-### 1. `config.py` — Primary configuration (edit these 3 paths)
+| Model | Download | Pass as |
+|-------|----------|---------|
+| WordStylist EMA | [Google Drive](https://drive.google.com/file/d/1XVRUXSJw0PaNgrtFH_mNHceFO-Ouf_xz/view?usp=share_link) | `--model_path` |
+| HTR/OCR model | [HTR best practices](https://github.com/georgeretsi/HTR-best-practices) | `--loadPrevPath` |
 
-| Variable | Line | What to set |
-|----------|------|-------------|
-| `iam_path` | ~36 | Path to preprocessed IAM word images (64×256 PNG crops) |
-| `authorBasePath` | ~44 | Directory containing the WordStylist pretrained model |
-| `save_path` | ~105 | Directory where generated images and attention maps will be saved |
+### Step 2 — Prepare IAM dataset
 
-Example:
-```python
-# config.py
-iam_path = [
-    "/your/path/to/allCrops_preprocess/"   # ← change this
-][dataIndx]
+Download `data/words.tgz` from [IAM Handwriting Database](https://fki.tic.heia-fr.ch/databases/iam-handwriting-database), then:
 
-authorBasePath = "/your/path/to/wordStylist/models/"  # ← change this
-
-save_path = ["/your/path/to/output/results/"][allInOneIndx]  # ← change this
+```bash
+python prepare_images.py
+# Edit iam_path and save_dir in prepare_images.py first
 ```
 
-### 2. `regFrmTrnVariStyleMixOcr.py` — Two hardcoded model paths (edit these)
+This produces 64×256 px PNG word crops. Pass the output folder as `--iam_path`.
 
-| Line | Variable | What to set |
-|------|----------|-------------|
-| ~1380 | `--loadPrevPath` | Path to the pretrained HTR (OCR) model `.pt` file |
-| ~1492 | `modelPath` | Path to the WordStylist EMA model (`ema_ckpt.pt`) |
-
-```python
-# Line ~1380
-parser.add_argument('--loadPrevPath', default="/your/path/to/htr_model.pt")
-
-# Line ~1492
-modelPath = "/your/path/to/wordStylist/models/ema_ckpt.pt"
-```
-
-### 3. `regFrmTrnVariStyleMixOcr.py` — Command-line argument (can also pass at runtime)
+### Step 3 — Run inference
 
 ```bash
 python regFrmTrnVariStyleMixOcr.py \
-  --iam_path /your/path/to/allCrops_preprocess/ \
+  --iam_path      /path/to/iam/word/crops/   \
+  --model_path    /path/to/ema_ckpt.pt        \
+  --loadPrevPath  /path/to/htr_model.pt       \
+  --save_path     ./output/                   \
   --batch_size 4 --epochs 1
 ```
 
 ---
 
-## Pre-trained Models
-
-| Model | Download | Place at |
-|-------|----------|----------|
-| WordStylist (EMA) | [Google Drive](https://drive.google.com/file/d/1XVRUXSJw0PaNgrtFH_mNHceFO-Ouf_xz/view?usp=share_link) | `authorBasePath` in `config.py` |
-| HTR/OCR model | From [HTR best practices](https://github.com/georgeretsi/HTR-best-practices) | `--loadPrevPath` argument |
-
----
-
-## IAM Dataset Preprocessing
-
-Download IAM `data/words.tgz` from [IAM Handwriting Database](https://fki.tic.heia-fr.ch/databases/iam-handwriting-database), then preprocess:
-
-```bash
-python prepare_images.py
-```
-*(sets `iam_path` to the output folder)*
-
----
-
-## Running Inference
-
-```bash
-python regFrmTrnVariStyleMixOcr.py --batch_size 4 --epochs 1
-```
-
-To limit to 200 images (fast test):
-> The script runs 50 batches by default (`if i >= 50: break` in the loader loop). Adjust in `regFrmTrnVariStyleMixOcr.py` line ~980.
-
----
-
 ## Output: Where to Find Generated Images and Attention Maps
 
-After running, all outputs are saved under `save_path` (set in `config.py`):
+After running, all outputs are under `--save_path`:
 
 ```
-save_path/
-└── noChange/                        ← Generated word images (original writer style)
+output/
+└── noChange/                        ← Generated word images
     │   a03-034-01-03_049_116_New__called_0.png
     │   b06-019-00-07_128_085_New__Herr_0.png
     │   ...
     └── attentionMaps/               ← Per-character attention map visualizations
-            a03-034-01-03_049_116_New__called_0_c_0_char_att0_val2_rollMins4.png
-            a03-034-01-03_049_116_New__called_1_a_0_char_att0_val2_rollMins4.png
-            a03-034-01-03_049_116_New__called_2_l_0_char_att0_val2_rollMins4.png
+            ..._called_0_c_0_char_att0_val2_rollMins4.png   ← char 0 = 'c'
+            ..._called_1_a_0_char_att0_val2_rollMins4.png   ← char 1 = 'a'
+            ..._called_2_l_0_char_att0_val2_rollMins4.png   ← char 2 = 'l'
             ...
 ```
 
-**Filename format for word images:**
+**Filename format — word images:**
 ```
 {imageID}_{originalWriterID}_{shuffledWriterID}_New__{word}_{epoch}.png
 ```
 
-**Filename format for attention maps:**
+**Filename format — attention maps:**
 ```
 {imageID}_{writerIDs}_New__{word}_{charIndex}_{charLetter}_char_att0_val2_rollMins4.png
 ```
 
-For each generated word, you get one attention map PNG per character (e.g. 6 maps for a 6-letter word).
+For each generated word image, you get **one attention map per character** (e.g. 6 maps for "called").
 
 ---
 

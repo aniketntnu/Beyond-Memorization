@@ -1329,8 +1329,8 @@ def main():
     parser.add_argument('--img_feat', type=bool, default=True)
     parser.add_argument('--interpolation', type=bool, default=False)
     parser.add_argument('--writer_dict', type=str, default='./writers_dict.json') #
-    parser.add_argument('--stable_dif_path', type=str, default="/cluster/datastore/aniketag/allData/supportingSoftwares/stableDiffusion/", help='path to stable diffusion')
-    parser.add_argument('--iam_path', type=str, default='/cluster/datastore/aniketag/allData/wordStylist/allCrops_preprocess/', help='path to iam dataset (images 64x256)')
+    parser.add_argument('--stable_dif_path', type=str, default="", help='path to stable diffusion (not required for inference)')
+    parser.add_argument('--iam_path', type=str, default=iam_path, help='path to preprocessed IAM word images (64x256 PNG crops)')
 
     # experiment wise changing parameter
     
@@ -1346,7 +1346,8 @@ def main():
     parser.add_argument('--loadPrev', type=int, default=1,help ="model from authorBasePath gets loaded")
 
 
-    parser.add_argument('--save_path', type=str, default=save_path,help = "this is location where it savesthe new model" ) 
+    parser.add_argument('--save_path', type=str, default=save_path, help='directory to save generated images and attention maps')
+    parser.add_argument('--model_path', type=str, default="./models/ema_ckpt.pt", help='path to pretrained WordStylist EMA model .pt file')
     #parser.add_argument('--saveModelName', type=str, default= saveModelName ,help = "by this name save model at save_path" ) 
     parser.add_argument('--saveModelName', type=str, default= saveModelName,help = "by this name save model at save_path" ) 
 
@@ -1377,7 +1378,7 @@ def main():
     parser.add_argument('--fullSampling', type=int, default=1, help='call model every time')
     parser.add_argument('--batchCrossAttention', type=int, default=0, help='inject another image feature this # indicates self srength') # 
     parser.add_argument('--spatialCross', type=int, default=0, help='spatialLayoutChange') # 
-    parser.add_argument('--loadPrevPath', type=str, default="/cluster/datastore/aniketag/allData/Htr/model/IAM/realAachen_iam_AndSynthetic_Mse_text_Phos_condi_FromScratch/temp_0.1288.pt")
+    parser.add_argument('--loadPrevPath', type=str, default="./models/htr_model.pt", help='path to pretrained HTR/OCR model .pt file')
     parser.add_argument('--ddp', type=int, default=0)
     parser.add_argument('--lang', type=str, default= "ENG",help = "language") 
 
@@ -1489,7 +1490,7 @@ def main():
 
     #modelPath = "/cluster/datastore/aniketag/allData/wordStylist/models/IAM/charImage/models/models/models/ema_charLevelEmb_1200.pt"
     
-    modelPath = "/cluster/datastore/aniketag/allData/wordStylist/models/IAM/authorsModel/models/models/ema_ckpt.pt"
+    modelPath = args.model_path
     #unet.load_state_dict(torch.load(modelPath,map_location=device),strict=False)
     
     if 1:#args.loadPrev == 1 and os.path.isfile(args.save_path+saveModelName):
