@@ -1329,7 +1329,7 @@ def main():
     parser.add_argument('--img_feat', type=bool, default=True)
     parser.add_argument('--interpolation', type=bool, default=False)
     parser.add_argument('--writer_dict', type=str, default='./writers_dict.json') #
-    parser.add_argument('--stable_dif_path', type=str, default="", help='path to stable diffusion (not required for inference)')
+    parser.add_argument('--stable_dif_path', type=str, default="", help='path to local Stable Diffusion v1.5 model directory (must contain vae/ subfolder). Download from: https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5')
     parser.add_argument('--iam_path', type=str, default=iam_path, help='path to preprocessed IAM word images (64x256 PNG crops)')
 
     # experiment wise changing parameter
