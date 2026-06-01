@@ -814,10 +814,7 @@ class ResBlock(TimestepBlock):
             #h = self.add_emb_to_h(h, emb_out, 24) # add_emb_to_h_character_based
 
             if not max_x_coords is None and charIndx>=0:
-                #h = self.add_emb_to_h_character_based(h, emb_out,emb_out1, max_x_coords,charIndx,extraDict)
-                #h = self.add_emb_to_h(hand, emb_out, 24)
-                h = h + emb_out
-
+                h = self.add_emb_to_h_character_based(h, emb_out, emb_out1, max_x_coords, charIndx, extraDict)
             else:
                 h = h + emb_out
             

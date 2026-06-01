@@ -977,7 +977,7 @@ def train(epoch,diffusion,net, model, ema, ema_model, vae, optimizer, mse_loss, 
                 
                     #readStopFlag(args)
 
-                    if i >= 50:  # 50 batches × 4 = 200 images
+                    if i >= 13:  # 13 batches × 4 = ~52 images
                         break
                     #print("\n\t i:",i)
                     
@@ -1592,9 +1592,8 @@ def main():
             print("-1.###################### ")
             #except Exception as e:
             #pass
-        
-        exit()
-        if 0:
+
+        if 0:  # charLocation=-2 (random writer swap) disabled
 
             try:
                 charLocation = -2

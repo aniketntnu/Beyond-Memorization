@@ -13,38 +13,46 @@
 
 ---
 
+## Style Variability — Side-by-Side Comparison
+
+Each row shows the **same word** generated with progressively more style mixing. Left is the original writer style; right columns inject a different writer's embedding at increasing character positions:
+
+![Variability Comparison](variability_comparison.gif)
+
+> Each frame = one word. Columns left→right: **Original** | **charIndex 0** | **charIndex 1** | **charIndex 2** | **charIndex 3**
+
+---
+
 ## Attention Map Visualization
 
-Per-character attention maps showing how the model localizes each character in the generated word image:
+Per-character attention maps showing how the model localizes each character:
 
 ![Attention Maps Preview](attentionMaps_preview.gif)
-
-Each frame shows the attention map for one character overlaid on the generated word image. These maps are used to spatially inject a different writer's style at the character level.
 
 ---
 
 ## Method Overview
 
 - **Base model:** [WordStylist](https://github.com/koninik/WordStylist) — pretrained latent diffusion model for styled handwritten word generation (ICDAR 2023)
-- **Our contribution:** Training-free style mixing using character-level attention map localization and writer embedding injection
-- **No retraining required** — runs purely at inference time on the pretrained WordStylist model
+- **Our contribution:** Training-free style mixing at inference time using character-level attention map localization and writer embedding injection
+- **Key idea:** For a word with *N* characters, the U-Net attention maps identify each character's spatial region (`max_x_coords`). At each ResBlock, the original writer's embedding is applied left of character `i`, and a randomly selected writer's embedding is applied right of character `i` — producing progressively varied styles without any retraining
+
+The injection formula: **h = mask × emb_original + mask1 × emb_shuffled** where mask/mask1 are derived from the attention-based character position `max_x_coords[:, charIndx]`
 
 ---
 
 ## Assumptions
 
-> These are the assumptions made by this implementation. Make sure they are satisfied before running.
-
 | # | Assumption | Detail |
 |---|-----------|--------|
-| 1 | **CUDA GPU available** | Requires a CUDA-capable GPU. Set `device = "cuda:0"` in `config.py` |
-| 2 | **IAM dataset preprocessed** | Word images must be cropped and resized to **64×256 px** grayscale PNG crops |
-| 3 | **WordStylist pretrained model** | EMA model `ema_ckpt.pt` downloaded from WordStylist, passed via `--model_path` |
-| 4 | **HTR/OCR model** | Pretrained HTR `.pt` file for word filtering, passed via `--loadPrevPath` |
-| 5 | **Stable Diffusion v1.5 (VAE)** | Local copy of [SD v1.5](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5) needed for the VAE encoder/decoder. Pass the root directory via `--stable_dif_path`. It must contain a `vae/` subfolder |
-| 6 | **Python 3.8** | Tested on Python 3.8 with PyTorch 2.4.1+CUDA 12.1 |
-| 7 | **MAX_CHARS = 25** | Maximum word length is 25 characters. Words longer than 25 chars are skipped |
-| 8 | **GT file included** | `gt/gany.filter27` (IAM training word list) is included in this repo |
+| 1 | **CUDA GPU** | Requires CUDA-capable GPU. Set `device = "cuda:0"` in `config.py` |
+| 2 | **IAM dataset preprocessed** | Word images cropped and resized to **64×256 px** grayscale PNG |
+| 3 | **WordStylist EMA model** | `ema_ckpt.pt` downloaded and passed via `--model_path` |
+| 4 | **HTR/OCR model** | Pretrained HTR `.pt` file for word filtering via `--loadPrevPath` |
+| 5 | **Stable Diffusion v1.5** | Local copy needed for VAE. Pass root dir via `--stable_dif_path` (must contain `vae/` subfolder). Download: `git clone https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5` |
+| 6 | **Python 3.8** | Tested on Python 3.8, PyTorch 2.4.1+CUDA 12.1 |
+| 7 | **MAX_CHARS = 25** | Words longer than 25 chars are skipped |
+| 8 | **GT file included** | `gt/gany.filter27` is included in this repo |
 
 ---
 
@@ -54,8 +62,6 @@ Each frame shows the attention map for one character overlaid on the generated w
 pip install -r requirements.txt
 ```
 
-Key packages: `torch>=2.4.1`, `diffusers>=0.35.1`, `transformers>=4.46.3`, `einops`, `timm`, `scikit-image`
-
 ---
 
 ## Setup
@@ -64,61 +70,55 @@ Key packages: `torch>=2.4.1`, `diffusers>=0.35.1`, `transformers>=4.46.3`, `eino
 
 | Model | Download | Pass as |
 |-------|----------|---------|
-| WordStylist EMA model | [Google Drive](https://drive.google.com/file/d/1XVRUXSJw0PaNgrtFH_mNHceFO-Ouf_xz/view?usp=share_link) | `--model_path /path/to/ema_ckpt.pt` |
-| HTR/OCR model | [HTR best practices](https://github.com/georgeretsi/HTR-best-practices) | `--loadPrevPath /path/to/htr_model.pt` |
-| Stable Diffusion v1.5 | `git clone https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5` | `--stable_dif_path /path/to/stable-diffusion-v1-5/` |
-
-> **Note on Stable Diffusion:** Only the `vae/` subfolder is used. The directory must contain `vae/config.json` and `vae/diffusion_pytorch_model.bin`.
+| WordStylist EMA | [Google Drive](https://drive.google.com/file/d/1XVRUXSJw0PaNgrtFH_mNHceFO-Ouf_xz/view?usp=share_link) | `--model_path` |
+| HTR/OCR model | [HTR best practices](https://github.com/georgeretsi/HTR-best-practices) | `--loadPrevPath` |
+| Stable Diffusion v1.5 | `git clone https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5` | `--stable_dif_path` |
 
 ### Step 2 — Prepare IAM dataset
 
-Download `data/words.tgz` from [IAM Handwriting Database](https://fki.tic.heia-fr.ch/databases/iam-handwriting-database), then preprocess to 64×256 px PNG crops:
-
 ```bash
-python prepare_images.py  # edit iam_path and save_dir inside first
+python prepare_images.py   # edit iam_path and save_dir inside first
 ```
 
 ### Step 3 — Run inference
 
 ```bash
 python regFrmTrnVariStyleMixOcr.py \
-  --iam_path       /path/to/iam/word/crops/            \
-  --model_path     /path/to/ema_ckpt.pt                \
-  --loadPrevPath   /path/to/htr_model.pt               \
+  --iam_path        /path/to/iam/word/crops/           \
+  --model_path      /path/to/ema_ckpt.pt               \
+  --loadPrevPath    /path/to/htr_model.pt              \
   --stable_dif_path /path/to/stable-diffusion-v1-5/   \
-  --save_path      ./output/                           \
+  --save_path       ./output/                          \
   --batch_size 4 --epochs 1
 ```
 
 ---
 
-## Output: Where to Find Generated Images and Attention Maps
-
-After running, all outputs are under `--save_path`:
+## Output Structure
 
 ```
 output/
-└── noChange/                        ← Generated word images
-    │   a03-034-01-03_049_116_New__called_0.png
-    │   ...
-    └── attentionMaps/               ← Per-character attention map visualizations
-            ..._called_0_c_0_char_att0_val2_rollMins4.png   ← char 0 = 'c'
-            ..._called_1_a_0_char_att0_val2_rollMins4.png   ← char 1 = 'a'
-            ..._called_2_l_0_char_att0_val2_rollMins4.png   ← char 2 = 'l'
-            ...
+├── noChange/                  ← Original writer style (baseline)
+│   ├── word_0.png
+│   └── attentionMaps/         ← Per-character attention maps
+│       ├── word_0_c_0_....png
+│       └── ...
+├── charIndex_0/               ← Style mixed starting at character 0
+│   └── attentionMaps/
+├── charIndex_1/               ← Style mixed starting at character 1
+│   └── attentionMaps/
+├── charIndex_2/               ← Style mixed starting at character 2
+│   └── attentionMaps/
+└── charIndex_3/               ← Style mixed starting at character 3
+    └── attentionMaps/
 ```
 
-**Filename format — word images:**
-```
-{imageID}_{originalWriterID}_{shuffledWriterID}_New__{word}_{epoch}.png
-```
+Compare the **same word** across `noChange/` and `charIndex_*/` folders to observe style variability.
 
-**Filename format — attention maps:**
+**Filename format:**
 ```
-{imageID}_{writerIDs}_New__{word}_{charIndex}_{charLetter}_char_att0_val2_rollMins4.png
+{imageID}_{writerID}_{shuffledWriterID}_New__{word}_{epoch}.png
 ```
-
-For each generated word, you get **one attention map per character**.
 
 ---
 
@@ -142,7 +142,7 @@ For each generated word, you get **one attention map per character**.
 
 ## Code Credits
 
-Built on top of **WordStylist** ([koninik/WordStylist](https://github.com/koninik/WordStylist)). The base diffusion model, U-Net architecture, and dataset pipeline are from WordStylist. We extend it with training-free style mixing at inference time.
+Built on top of **WordStylist** ([koninik/WordStylist](https://github.com/koninik/WordStylist)).
 
 ```bibtex
 @article{nikolaidou2023wordstylist,
