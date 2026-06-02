@@ -842,77 +842,43 @@ def callOCR(net,image,wordLabel):
 import shutil
 
 def process_tensors_and_ocr(
-    net, allImages,allTensors, wordLabel,s_id,
-    shuffledWriters,charLocation,fixed_size, tensor_centered, callOCR, dumpImages=None
+    net, allImages, allTensors, wordLabel, s_id,
+    shuffledWriters, charLocation, fixed_size, tensor_centered, callOCR, dumpImages=None, use_ocr=0
 ):
-    # Preprocess the tensors
-    
-    #print("\n\t 3.len(allImages)=",len(allImages)," len(allTensors)=",len(allTensors))
-    
     allTensors = torchProcess(allTensors)
-    #print("\n\t 4.len(allImages)=",len(allImages)," len(allTensors)=",len(allTensors))
-
     fheight, fwidth = fixed_size
     allTensors = tensor_centered(allTensors, (fheight, fwidth), centering=(.5, .5), border_value=0.0)
 
-    # Save intermediate images (optional)
     if dumpImages:
         dumpImages(allTensors, "./savedTensors/", str(1))
 
-    # Perform OCR
-    output1, dec_transcr1 = callOCR(net, allTensors, wordLabel)
-    output1.requires_grad = False
-
-    # Initialize counters
     correctCount = 0
     totCount = 0
     delCount = 0
-    delImageName = []
-
     correctImage = []
     correctWord = []
     correctWriter = []
     correctShuffleWriter = []
-    # Process each prediction
-    
-    #print("\n\t len(s_id):",len(s_id)," len(shuffledWrIndx):",len(shuffledWrIndx))
-    
+
+    if use_ocr == 0:
+        # No OCR filtering — save all images with GT labels
+        dec_transcr1 = wordLabel  # treat all as correct
+    else:
+        # Run OCR and filter: only keep images where prediction matches GT
+        output1, dec_transcr1 = callOCR(net, allTensors, wordLabel)
+        output1.requires_grad = False
+
     for w, d1 in zip(wordLabel, dec_transcr1):
-        
-        #print("w:",w," d1:",d1)
         if w == d1:
-            # Correct prediction
             correctCount += 1
-            
-            #correctImage.append(allTensors[0][totCount])
-
             correctImage.append(allImages[0][totCount])
-
             correctWord.append(w)
             correctWriter.append(s_id[totCount].item())
             correctShuffleWriter.append(shuffledWriters[totCount])
-            #copyTo = os.path.basename(gt[totCount][0])
-            #allAcceptedImages = {}
-            #allAcceptedImages[copyTo] = 1
-            #shutil.copy(gt[totCount][0], dumpBasePath + split + batchFolder + copyTo)
         else:
-            # Incorrect prediction
-            #writeImgName = f"{os.path.basename(gt[totCount][0])}_{w}.png"
-            #delImageName.append(gt[totCount][0]) torch.zeros(1)
-
-            if charLocation<0:
-                correctImage.append(allImages[0][totCount])
-                correctWord.append(w)
-                correctWriter.append(s_id[totCount].item())
-                correctShuffleWriter.append(shuffledWriters[totCount])
-
-            else:
-                correctImage.append(allImages[0][totCount])
-                correctWord.append(w)
-                correctWriter.append(s_id[totCount].item())
-                correctShuffleWriter.append(shuffledWriters[totCount])
+            # use_ocr=1 and mismatch — skip this image
             delCount += 1
-        
+
         totCount += 1
 
     # Print summary
@@ -1108,10 +1074,11 @@ def train(epoch,diffusion,net, model, ema, ema_model, vae, optimizer, mse_loss, 
                     s_id=s_id,
                     shuffledWriters=shuffledWriters,
                     charLocation=charLocation,
-                    fixed_size=(64, 256),  # Example fixed size
+                    fixed_size=(64, 256),
                     tensor_centered=tensor_centered,
                     callOCR=callOCR,
-                    dumpImages=None)  # Or provide a function if needed)
+                    dumpImages=None,
+                    use_ocr=args.use_ocr)
 
                     #print("\n\t correctWriter:",correctWriter," len(correctWriter):",len(correctWriter))
                     #print("\n\t shuffledWrIndx:",[s.item() for s in shuffledWrIndx])
@@ -1348,6 +1315,7 @@ def main():
 
     parser.add_argument('--save_path', type=str, default=save_path, help='directory to save generated images and attention maps')
     parser.add_argument('--model_path', type=str, default="./models/ema_ckpt.pt", help='path to pretrained WordStylist EMA model .pt file')
+    parser.add_argument('--use_ocr', type=int, default=0, help='0=save all generated images (no OCR filter); 1=only save images where OCR prediction matches GT word')
     #parser.add_argument('--saveModelName', type=str, default= saveModelName ,help = "by this name save model at save_path" ) 
     parser.add_argument('--saveModelName', type=str, default= saveModelName,help = "by this name save model at save_path" ) 
 
